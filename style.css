@@ -1,0 +1,35 @@
+:root{
+  --bg:#111318;
+  --card:#1c1f27;
+  --accent:#5b8cff;
+  --text:#f0f2f6;
+  --muted:#9aa1ad;
+  --radius:16px;
+  --gap:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;min-height:100%;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
+#app{max-width:520px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
+#app:has(main.level3){max-width:1000px;}
+main{flex:1;padding:0 20px 30px;display:flex;flex-direction:column;justify-content:center;}
+main.level3{padding-top:0;justify-content:flex-start;}
+/* центрированный список кнопок (экраны 1 и 2) */
+.btn-col{display:flex;flex-direction:column;gap:var(--gap);align-items:stretch;justify-content:center;
+  min-height:60vh;}
+.big-btn{background:var(--card);border:1px solid #262a35;border-radius:var(--radius);padding:20px 16px;
+  text-align:center;font-size:16px;font-weight:600;line-height:1.3;cursor:pointer;word-break:break-word;}
+.big-btn:active{transform:scale(0.97);}
+/* экран 3: галерея — растягивается на всю ширину окна (а не только 520px),
+   но текстовые блоки ниже остаются узкими, как раньше */
+.imgscroll{display:flex;gap:17px;overflow-x:auto;padding:0 12px 6px;justify-content:safe center;
+  width:100%;max-width:1000px;margin-left:auto;margin-right:auto;
+  -webkit-overflow-scrolling:touch;}
+.imgscroll img{height:65vh;width:auto;border-radius:17px;flex-shrink:0;}
+.imgscroll::-webkit-scrollbar{height:5px;}
+.imgscroll::-webkit-scrollbar-thumb{background:#3a3f4c;border-radius:3px;}
+.desc-block{background:var(--card);border-radius:var(--radius);padding:16px;margin-top:14px;font-size:15px;
+  line-height:1.5;white-space:pre-wrap;word-break:break-word;border:1px solid #262a35;
+  width:100%;max-width:520px;margin-left:auto;margin-right:auto;}
+.desc-title{font-size:12px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.03em;}
+.empty{color:var(--muted);text-align:center;padding:40px 10px;font-size:14px;}
