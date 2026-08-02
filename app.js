@@ -4,6 +4,7 @@ function goTo(p){ path = p; render(); window.scrollTo(0,0); }
 function goBack(){ path.pop(); render(); window.scrollTo(0,0); }
 
 document.addEventListener("keydown", (e)=>{
+  if(document.getElementById("lightbox-overlay")) return; // лайтбокс сам обрабатывает Escape
   if(path.length === 0) return;
   if(e.code === "Space" || e.code === "Backspace" || e.code === "Escape"){
     e.preventDefault();
@@ -64,10 +65,11 @@ function renderLevel3(main, catIdx, exIdx){
   if(ex.images && ex.images.length){
     const scroll = document.createElement("div");
     scroll.className = "imgscroll";
-    ex.images.forEach(src=>{
+    ex.images.forEach((src, i)=>{
       const img = document.createElement("img");
       img.src = src;
       img.alt = ex.title;
+      img.onclick = ()=>openLightbox(ex.images, i, ex.title);
       scroll.appendChild(img);
     });
     main.appendChild(scroll);
@@ -92,6 +94,71 @@ function renderLevel3(main, catIdx, exIdx){
   d2.innerHTML = '<div class="desc-title">Описание</div>' + escapeHtml(ex.desc2 || "заглушка 2");
   main.appendChild(d2);
 }
+
+let lb = { images: [], index: 0, zoomed: false };
+
+function openLightbox(images, index, alt){
+  closeLightbox();
+  lb = { images: images, index: index, zoomed: false, alt: alt };
+
+  const overlay = document.createElement("div");
+  overlay.className = "lightbox-overlay";
+  overlay.id = "lightbox-overlay";
+  overlay.onclick = closeLightbox;
+  document.body.appendChild(overlay);
+
+  renderLightbox();
+}
+
+function renderLightbox(){
+  const overlay = document.getElementById("lightbox-overlay");
+  if(!overlay) return;
+  overlay.innerHTML = "";
+
+  const img = document.createElement("img");
+  img.src = lb.images[lb.index];
+  img.alt = lb.alt || "";
+  img.className = "lightbox-img" + (lb.zoomed ? " zoomed" : "");
+  img.onclick = (e)=>{
+    e.stopPropagation(); // клик по фото не закрывает лайтбокс
+    lb.zoomed = !lb.zoomed; // переключаем 100% <-> 200%
+    renderLightbox();
+  };
+  overlay.appendChild(img);
+
+  if(lb.images.length > 1){
+    const prev = document.createElement("div");
+    prev.className = "lightbox-nav lightbox-prev";
+    prev.textContent = "‹";
+    prev.onclick = (e)=>{ e.stopPropagation(); lightboxStep(-1); };
+    overlay.appendChild(prev);
+
+    const next = document.createElement("div");
+    next.className = "lightbox-nav lightbox-next";
+    next.textContent = "›";
+    next.onclick = (e)=>{ e.stopPropagation(); lightboxStep(1); };
+    overlay.appendChild(next);
+  }
+}
+
+function lightboxStep(dir){
+  const n = lb.images.length;
+  lb.index = (lb.index + dir + n) % n;
+  lb.zoomed = false; // при листании всегда сбрасываем зум до 100%
+  renderLightbox();
+}
+
+function closeLightbox(){
+  const overlay = document.getElementById("lightbox-overlay");
+  if(overlay) overlay.remove();
+}
+
+document.addEventListener("keydown", (e)=>{
+  if(!document.getElementById("lightbox-overlay")) return;
+  if(e.code === "Escape"){ closeLightbox(); return; }
+  if(e.code === "ArrowLeft"){ e.preventDefault(); lightboxStep(-1); return; }
+  if(e.code === "ArrowRight"){ e.preventDefault(); lightboxStep(1); return; }
+});
 
 function escapeHtml(s){
   return (s || "").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
