@@ -84,12 +84,12 @@ function renderLevel3(main, catIdx, exIdx){
 
   const d1 = document.createElement("div");
   d1.className = "desc-block";
-  d1.innerHTML = '<div class="desc-title">Техника</div>' + escapeHtml(ex.desc1 || "заглушка 1");
+  d1.innerHTML = '<div class="desc-title">Упражнение</div>' + escapeHtml(ex.desc1 || "заглушка 1");
   main.appendChild(d1);
 
   const d2 = document.createElement("div");
   d2.className = "desc-block";
-  d2.innerHTML = '<div class="desc-title">Моя заметка</div>' + escapeHtml(ex.desc2 || "заглушка 2");
+  d2.innerHTML = '<div class="desc-title">Описание</div>' + escapeHtml(ex.desc2 || "заглушка 2");
   main.appendChild(d2);
 }
 
