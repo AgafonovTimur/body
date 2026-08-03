@@ -57,6 +57,43 @@ document.addEventListener("keydown", (e)=>{
   }
 });
 
+// --- Свой свайп-жест "назад" (не зависит от системного жеста браузера) ---
+// Свайп вправо в любом месте экрана вызывает goBack(), КРОМЕ зоны галереи
+// фото (.imgscroll) — там свайп должен листать/скроллить сами миниатюры.
+// Работает только вне лайтбокса (там свайп используется для листания фото)
+// и только если есть куда возвращаться (path.length > 0).
+(function(){
+  const THRESHOLD = 60;     // минимальная длина свайпа по X
+  const MAX_VERTICAL = 60;  // если свайп слишком "косой" (вертикальный) — не считаем
+
+  let startX = 0, startY = 0, tracking = false;
+
+  document.addEventListener("touchstart", (e)=>{
+    if(document.getElementById("lightbox-overlay")) return;
+    if(path.length === 0) return;
+    if(e.touches.length !== 1) return;
+    if(e.target.closest(".imgscroll")) return; // жест внутри галереи — не трогаем, там своя прокрутка
+    const t = e.touches[0];
+    startX = t.clientX;
+    startY = t.clientY;
+    tracking = true;
+  }, { passive: true });
+
+  document.addEventListener("touchend", (e)=>{
+    if(!tracking) return;
+    tracking = false;
+    if(document.getElementById("lightbox-overlay")) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - startX;
+    const dy = Math.abs(t.clientY - startY);
+    if(dx > THRESHOLD && dy < MAX_VERTICAL){
+      goBack();
+    }
+  }, { passive: true });
+
+  document.addEventListener("touchcancel", ()=>{ tracking = false; }, { passive: true });
+})();
+
 function render(){
   const app = document.getElementById("app");
   app.innerHTML = "";
