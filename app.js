@@ -1,68 +1,59 @@
 let path = []; // [] -> категории, [catIdx] -> упражнения, [catIdx, exIdx] -> детали
 
 // --- History API: системная кнопка "назад" / свайп-назад на мобильных ---
-// Каждый переход вглубь (goTo, открытие лайтбокса) кладёт запись в history.
-// Системный "назад" вызывает popstate — мы сами решаем, что делать, вместо
-// того чтобы браузер увёл пользователя со страницы.
-let suppressPopstate = false; // ставим true, когда сами вызываем history.back() программно
-
-function pushHistoryState(state){
-  suppressPopstate = false;
-  history.pushState(state, "");
-}
+// Подход без history.back(): при закрытии лайтбокса кликом/крестиком мы
+// НЕ откатываем историю назад, а просто заменяем текущую запись (replaceState)
+// на "лайтбокс закрыт". Так реальная позиция в history всегда соответствует
+// текущему состоянию экрана, и не бывает рассинхронизации счётчика записей
+// (которая раньше вызывала "не сработало с 1-2 попытки" / дребезг).
+//
+// Системный "назад" всегда даёт ровно один popstate на одно нажание —
+// мы читаем его state и просто рендерим то, что там записано.
 
 function goTo(p){
   path = p;
-  pushHistoryState({ path: p.slice() });
+  history.pushState({ path: p.slice(), lightbox: false }, "");
   render();
   window.scrollTo(0,0);
 }
 
 function goBack(){
-  // если в истории есть наша запись — используем её, иначе просто откатываем path
-  if(history.state && history.state.path !== undefined){
-    suppressPopstate = true;
-    history.back();
-  } else {
-    path.pop();
-    render();
-    window.scrollTo(0,0);
-  }
+  history.back();
 }
 
 window.addEventListener("popstate", (e)=>{
-  if(suppressPopstate){ suppressPopstate = false; return; }
+  const state = e.state || { path: [], lightbox: false };
+  const lightboxWasOpen = !!document.getElementById("lightbox-overlay");
+  const shouldShowLightbox = !!state.lightbox;
 
-  const lightboxOpen = !!document.getElementById("lightbox-overlay");
-  if(lightboxOpen){
-    // системный "назад": закрываем лайтбокс, но НЕ уходим на уровень назад в приложении.
-    // history уже откатился сам (popstate это подтверждает), запись под лайтбоксом
-    // восстанавливать не нужно — просто добавляем новую "текущую" запись сверху,
-    // чтобы следующий "назад" снова сработал и увёл на уровень выше.
-    closeLightbox(true);
-    pushHistoryState({ path: path.slice() });
-    return;
-  }
+  path = (state.path || []).slice();
 
-  // обычная навигация по уровням
-  if(e.state && e.state.path !== undefined){
-    path = e.state.path.slice();
+  if(lightboxWasOpen && !shouldShowLightbox){
+    // "назад" закрыл лайтбокс — просто убираем оверлей, path не менялся
+    removeLightboxDom();
+    render();
+  } else if(!lightboxWasOpen && shouldShowLightbox){
+    // такое штатно не должно происходить (лайтбокс не открывается кнопкой "вперёд"),
+    // но на всякий случай просто рендерим текущий уровень
+    render();
   } else {
-    path = [];
+    render();
   }
-  render();
   window.scrollTo(0,0);
 });
 
 // стартовая запись в истории для корневого уровня
-history.replaceState({ path: [] }, "");
+history.replaceState({ path: [], lightbox: false }, "");
 
 document.addEventListener("keydown", (e)=>{
   if(document.getElementById("lightbox-overlay")) return; // лайтбокс сам обрабатывает Escape
   if(path.length === 0) return;
   if(e.code === "Space" || e.code === "Backspace" || e.code === "Escape"){
     e.preventDefault();
-    goBack();
+    path.pop();
+    history.pushState({ path: path.slice(), lightbox: false }, "");
+    render();
+    window.scrollTo(0,0);
   }
 });
 
@@ -152,7 +143,7 @@ function renderLevel3(main, catIdx, exIdx){
 let lb = { images: [], index: 0, zoomed: false };
 
 function openLightbox(images, index, alt){
-  closeLightbox();
+  removeLightboxDom();
   lb = { images: images, index: index, zoomed: false, alt: alt };
 
   const overlay = document.createElement("div");
@@ -163,7 +154,7 @@ function openLightbox(images, index, alt){
 
   // отдельная запись в истории для лайтбокса — системный "назад" / свайп-назад
   // должен закрыть именно лайтбокс, а не увести на уровень выше
-  pushHistoryState({ path: path.slice(), lightbox: true });
+  history.pushState({ path: path.slice(), lightbox: true }, "");
 
   renderLightbox();
   attachLightboxSwipe(overlay);
@@ -207,14 +198,20 @@ function lightboxStep(dir){
   renderLightbox();
 }
 
-function closeLightbox(fromPopstate){
+function removeLightboxDom(){
   const overlay = document.getElementById("lightbox-overlay");
   if(overlay) overlay.remove();
-  // если закрытие вызвано кликом/кнопкой (не системным "назад"), убираем
-  // запись лайтбокса из истории, чтобы она не мешала следующему "назад"
-  if(!fromPopstate && history.state && history.state.lightbox){
-    suppressPopstate = true;
-    history.back();
+}
+
+function closeLightbox(){
+  // клик по фону / крестик / Escape / выбор фото завершён — закрываем лайтбокс
+  // штатным способом: убираем DOM и синхронно заменяем текущую запись истории
+  // (replaceState, не back()) на "лайтбокс закрыт". Это не создаёт лишних
+  // прыжков в history и не зависит от асинхронного popstate, поэтому
+  // повторные быстрые открытия/закрытия не рассинхронизируются.
+  removeLightboxDom();
+  if(history.state && history.state.lightbox){
+    history.replaceState({ path: path.slice(), lightbox: false }, "");
   }
 }
 
