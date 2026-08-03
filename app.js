@@ -1,7 +1,61 @@
 let path = []; // [] -> категории, [catIdx] -> упражнения, [catIdx, exIdx] -> детали
 
-function goTo(p){ path = p; render(); window.scrollTo(0,0); }
-function goBack(){ path.pop(); render(); window.scrollTo(0,0); }
+// --- History API: системная кнопка "назад" / свайп-назад на мобильных ---
+// Каждый переход вглубь (goTo, открытие лайтбокса) кладёт запись в history.
+// Системный "назад" вызывает popstate — мы сами решаем, что делать, вместо
+// того чтобы браузер увёл пользователя со страницы.
+let suppressPopstate = false; // ставим true, когда сами вызываем history.back() программно
+
+function pushHistoryState(state){
+  suppressPopstate = false;
+  history.pushState(state, "");
+}
+
+function goTo(p){
+  path = p;
+  pushHistoryState({ path: p.slice() });
+  render();
+  window.scrollTo(0,0);
+}
+
+function goBack(){
+  // если в истории есть наша запись — используем её, иначе просто откатываем path
+  if(history.state && history.state.path !== undefined){
+    suppressPopstate = true;
+    history.back();
+  } else {
+    path.pop();
+    render();
+    window.scrollTo(0,0);
+  }
+}
+
+window.addEventListener("popstate", (e)=>{
+  if(suppressPopstate){ suppressPopstate = false; return; }
+
+  const lightboxOpen = !!document.getElementById("lightbox-overlay");
+  if(lightboxOpen){
+    // системный "назад": закрываем лайтбокс, но НЕ уходим на уровень назад в приложении.
+    // history уже откатился сам (popstate это подтверждает), запись под лайтбоксом
+    // восстанавливать не нужно — просто добавляем новую "текущую" запись сверху,
+    // чтобы следующий "назад" снова сработал и увёл на уровень выше.
+    closeLightbox(true);
+    pushHistoryState({ path: path.slice() });
+    return;
+  }
+
+  // обычная навигация по уровням
+  if(e.state && e.state.path !== undefined){
+    path = e.state.path.slice();
+  } else {
+    path = [];
+  }
+  render();
+  window.scrollTo(0,0);
+});
+
+// стартовая запись в истории для корневого уровня
+history.replaceState({ path: [] }, "");
 
 document.addEventListener("keydown", (e)=>{
   if(document.getElementById("lightbox-overlay")) return; // лайтбокс сам обрабатывает Escape
@@ -107,7 +161,12 @@ function openLightbox(images, index, alt){
   overlay.onclick = closeLightbox;
   document.body.appendChild(overlay);
 
+  // отдельная запись в истории для лайтбокса — системный "назад" / свайп-назад
+  // должен закрыть именно лайтбокс, а не увести на уровень выше
+  pushHistoryState({ path: path.slice(), lightbox: true });
+
   renderLightbox();
+  attachLightboxSwipe(overlay);
 }
 
 function renderLightbox(){
@@ -148,9 +207,40 @@ function lightboxStep(dir){
   renderLightbox();
 }
 
-function closeLightbox(){
+function closeLightbox(fromPopstate){
   const overlay = document.getElementById("lightbox-overlay");
   if(overlay) overlay.remove();
+  // если закрытие вызвано кликом/кнопкой (не системным "назад"), убираем
+  // запись лайтбокса из истории, чтобы она не мешала следующему "назад"
+  if(!fromPopstate && history.state && history.state.lightbox){
+    suppressPopstate = true;
+    history.back();
+  }
+}
+
+// --- свайп по фото в лайтбоксе: влево/вправо листает картинки ---
+function attachLightboxSwipe(overlay){
+  let startX = 0, startY = 0, tracking = false;
+  const threshold = 40; // минимальная длина свайпа в px
+
+  overlay.addEventListener("touchstart", (e)=>{
+    if(e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    tracking = true;
+  }, { passive: true });
+
+  overlay.addEventListener("touchend", (e)=>{
+    if(!tracking) return;
+    tracking = false;
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - startX;
+    const dy = touch.clientY - startY;
+    if(Math.abs(dx) > threshold && Math.abs(dx) > Math.abs(dy)){
+      if(dx < 0) lightboxStep(1);  // свайп влево -> следующее фото
+      else lightboxStep(-1);        // свайп вправо -> предыдущее фото
+    }
+  }, { passive: true });
 }
 
 document.addEventListener("keydown", (e)=>{

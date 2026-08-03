@@ -28,30 +28,29 @@ main.level3{padding-top:0;justify-content:flex-start;}
 .imgscroll img{height:65vh;width:auto;border-radius:17px;flex-shrink:0;cursor:zoom-in;}
 
 /* Лайтбокс: увеличенное фото поверх страницы.
-   ЧТОБЫ ИЗМЕНИТЬ БАЗОВЫЙ РАЗМЕР ФОТО — меняй --lightbox-size (сейчас 100% от доступного места)
-   ЧТОБЫ ИЗМЕНИТЬ РАЗМЕР ПРИ УВЕЛИЧЕНИИ — меняй --lightbox-zoom (сейчас 200%) */
+   ЧТОБЫ ИЗМЕНИТЬ КРАТНОСТЬ УВЕЛИЧЕНИЯ — меняй --lightbox-zoom (сейчас 2 = 200%) */
 .lightbox-overlay{
-  --lightbox-size:100%;
-  --lightbox-zoom:200%;
+  --lightbox-zoom:2;
   position:fixed;inset:0;background:rgba(0,0,0,0.85);
   display:flex;align-items:center;justify-content:center;
   z-index:1000;padding:0;overflow:auto;
 }
 .lightbox-img{
-  max-width:var(--lightbox-size);max-height:var(--lightbox-size);
+  max-width:100%;max-height:100%;
   width:auto;height:auto;border-radius:17px;
   box-shadow:0 10px 40px rgba(0,0,0,0.5);
   cursor:zoom-in;
-  transition:max-width .2s, max-height .2s;
+  transform:scale(1);
+  transition:transform .2s;
 }
 .lightbox-img.zoomed{
-  max-width:var(--lightbox-zoom);max-height:var(--lightbox-zoom);
+  transform:scale(var(--lightbox-zoom));
   cursor:zoom-out;
 }
 .lightbox-nav{
   position:fixed;top:0;bottom:0;display:flex;align-items:center;
   width:60px;font-size:40px;color:#fff;user-select:none;cursor:pointer;
-  background:transparent;
+  background:transparent;z-index:1001;
 }
 .lightbox-prev{left:0;justify-content:flex-start;padding-left:8px;}
 .lightbox-next{right:0;justify-content:flex-end;padding-right:8px;}
