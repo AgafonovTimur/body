@@ -61,4 +61,20 @@ main.level3{padding-top:0;justify-content:flex-start;}
   line-height:1.5;white-space:pre-wrap;word-break:break-word;border:1px solid #262a35;
   width:100%;max-width:520px;margin-left:auto;margin-right:auto;}
 .desc-title{font-size:12px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.03em;}
+
+/* Вкладки описания: обычная / легкая / силовая тренировка */
+.tabs-row{display:flex;align-items:stretch;gap:0;margin:-4px -4px 10px;
+  border-bottom:1px solid #262a35;overflow-x:auto;white-space:nowrap;}
+.tabs-row::-webkit-scrollbar{height:0;}
+.tab-btn{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;
+  text-align:left;padding:6px 8px 8px;cursor:pointer;user-select:none;
+  border-bottom:2px solid transparent;flex-shrink:0;}
+.tab-btn:first-child{padding-left:4px;}
+.tab-btn + .tab-btn{border-left:1px solid #262a35;}
+.tab-btn.active{color:var(--text);border-bottom-color:var(--accent);}
+.tab-btn:active{opacity:.7;}
+.tab-body{text-align:left;}
+@media (max-width:520px){
+  .tab-btn{font-size:11px;padding:6px 6px 8px;letter-spacing:0;}
+}
 .empty{color:var(--muted);text-align:center;padding:40px 10px;font-size:14px;}

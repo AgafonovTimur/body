@@ -45,6 +45,17 @@ window.addEventListener("popstate", (e)=>{
 // стартовая запись в истории для корневого уровня
 history.replaceState({ path: [], lightbox: false }, "");
 
+// клавиши 1 / 2 / 3 переключают вкладки описания на экране упражнения
+document.addEventListener("keydown", (e)=>{
+  if(document.getElementById("lightbox-overlay")) return;
+  if(e.ctrlKey || e.altKey || e.metaKey) return;
+  const n = { "1":0, "2":1, "3":2 }[e.key];
+  if(n === undefined) return;
+  if(!descTabButtons[n]) return;
+  e.preventDefault();
+  descTabButtons[n].click();
+});
+
 document.addEventListener("keydown", (e)=>{
   if(document.getElementById("lightbox-overlay")) return; // лайтбокс сам обрабатывает Escape
   if(path.length === 0) return;
@@ -97,6 +108,7 @@ document.addEventListener("keydown", (e)=>{
 function render(){
   const app = document.getElementById("app");
   app.innerHTML = "";
+  descTabButtons = [];
 
   const main = document.createElement("main");
   if(path.length === 2) main.classList.add("level3");
@@ -171,10 +183,52 @@ function renderLevel3(main, catIdx, exIdx){
   d1.innerHTML = '<div class="desc-title">Упражнение</div>' + escapeHtml(ex.desc1 || "заглушка 1");
   main.appendChild(d1);
 
-  const d2 = document.createElement("div");
-  d2.className = "desc-block";
-  d2.innerHTML = '<div class="desc-title">Описание</div>' + escapeHtml(ex.desc2 || "заглушка 2");
-  main.appendChild(d2);
+  main.appendChild(buildDescTabs(ex));
+}
+
+// кнопки вкладок текущего экрана упражнения (для клавиш 1 / 2 / 3)
+let descTabButtons = [];
+
+// --- Блок описания с тремя вкладками ---
+// Вкладки: "обычная тренировка" (desc2), "легкая тренировка" (desc3),
+// "силовая тренировка" (desc4). Картинки общие — галерея сверху одна.
+// Переключение вкладки меняет только текст, экран целиком не перерисовывается.
+function buildDescTabs(ex){
+  const tabs = [
+    { label: "обычная тренировка", text: ex.desc2 || "заглушка 2" },
+    { label: "легкая тренировка",  text: ex.desc3 || ((ex.title || "") + "11111") },
+    { label: "силовая тренировка", text: ex.desc4 || ((ex.title || "") + "22222") }
+  ];
+
+  const block = document.createElement("div");
+  block.className = "desc-block";
+
+  const row = document.createElement("div");
+  row.className = "tabs-row";
+
+  const body = document.createElement("div");
+  body.className = "tab-body";
+
+  const buttons = [];
+  tabs.forEach((t, i)=>{
+    const btn = document.createElement("div");
+    btn.className = "tab-btn" + (i === 0 ? " active" : "");
+    btn.textContent = t.label;
+    btn.onclick = ()=>{
+      buttons.forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      body.textContent = t.text;
+    };
+    buttons.push(btn);
+    row.appendChild(btn);
+  });
+
+  body.textContent = tabs[0].text;
+  descTabButtons = buttons; // для переключения клавишами 1 / 2 / 3
+
+  block.appendChild(row);
+  block.appendChild(body);
+  return block;
 }
 
 let lb = { images: [], index: 0, zoomed: false };
