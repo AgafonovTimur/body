@@ -180,7 +180,7 @@ function renderLevel3(main, catIdx, exIdx){
 
   const d1 = document.createElement("div");
   d1.className = "desc-block";
-  d1.innerHTML = '<div class="desc-title">Упражнение</div>' + escapeHtml(ex.desc1 || "заглушка 1");
+  d1.innerHTML = '<div class="desc-title">Упражнение</div>' + formatDesc(ex.desc1 || "заглушка 1");
   main.appendChild(d1);
 
   main.appendChild(buildDescTabs(ex));
@@ -217,13 +217,13 @@ function buildDescTabs(ex){
     btn.onclick = ()=>{
       buttons.forEach(b=>b.classList.remove("active"));
       btn.classList.add("active");
-      body.textContent = t.text;
+      body.innerHTML = formatDesc(t.text);
     };
     buttons.push(btn);
     row.appendChild(btn);
   });
 
-  body.textContent = tabs[0].text;
+  body.innerHTML = formatDesc(tabs[0].text);
   descTabButtons = buttons; // для переключения клавишами 1 / 2 / 3
 
   block.appendChild(row);
@@ -337,6 +337,34 @@ document.addEventListener("keydown", (e)=>{
   if(e.code === "ArrowLeft"){ e.preventDefault(); lightboxStep(-1); return; }
   if(e.code === "ArrowRight"){ e.preventDefault(); lightboxStep(1); return; }
 });
+
+// --- Оформление текста описаний (data.js) ---
+// Разметка, которую можно писать прямо в тексте desc1..desc4:
+//   -->текст   зелёная стрелка, сам текст обычного цвета (работает в любом месте строки)
+//   ==>текст   зелёная стрелка И вся строка зелёная
+//   ++текст    вся строка зелёная, без стрелки
+// Сам цвет задаётся в style.css переменной --arrow-color
+function formatDesc(text){
+  return escapeHtml(text || "")
+    .split("\n")
+    .map(line=>{
+      const t = line.trimStart();                       // текст строки без отступа слева
+      const pad = line.slice(0, line.length - t.length); // сам отступ сохраняем как есть
+
+      // ==> : стрелка + вся строка зелёная
+      if(t.startsWith("==&gt;")){
+        return pad + '<span class="line-green"><span class="arrow-marker">--&gt;</span>'
+                   + t.slice(6) + '</span>';
+      }
+      // ++ : вся строка зелёная без стрелки
+      if(t.startsWith("++")){
+        return pad + '<span class="line-green">' + t.slice(2) + '</span>';
+      }
+      // --> : зелёной становится только стрелка
+      return line.replace(/--&gt;/g, '<span class="arrow-marker">--&gt;</span>');
+    })
+    .join("\n");
+}
 
 function escapeHtml(s){
   return (s || "").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));

@@ -4,6 +4,9 @@
   --accent:#5b8cff;
   --text:#f0f2f6;
   --muted:#9aa1ad;
+  /* ЦВЕТ ЗЕЛЁНЫХ СТРЕЛОК "-->" И ЗЕЛЁНЫХ СТРОК В ОПИСАНИЯХ.
+     Меняй только это значение — цвет поменяется сразу везде. */
+  --arrow-color:#55d66e;
   --radius:16px;
   --gap:14px;
 }
@@ -60,6 +63,10 @@ main.level3{padding-top:0;justify-content:flex-start;}
 .desc-block{background:var(--card);border-radius:var(--radius);padding:16px;margin-top:14px;font-size:15px;
   line-height:1.5;white-space:pre-wrap;word-break:break-word;border:1px solid #262a35;
   width:100%;max-width:520px;margin-left:auto;margin-right:auto;}
+/* зелёная стрелка "-->" внутри описания */
+.arrow-marker{color:var(--arrow-color);font-weight:700;}
+/* строка описания целиком зелёная */
+.line-green{color:var(--arrow-color);}
 .desc-title{font-size:12px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.03em;}
 
 /* Вкладки описания: обычная / легкая / силовая тренировка */
